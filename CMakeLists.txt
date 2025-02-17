@@ -42,11 +42,14 @@ pico_set_program_version(AnalogDisplay "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(AnalogDisplay 0)
-pico_enable_stdio_usb(AnalogDisplay 0)
+pico_enable_stdio_usb(AnalogDisplay 1)
 
 # Add the standard library to the build
 target_link_libraries(AnalogDisplay
-        pico_stdlib)
+        pico_stdlib
+        hardware_adc
+        hardware_pwm
+        )
 
 # Add the standard include files to the build
 target_include_directories(AnalogDisplay PRIVATE
