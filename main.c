@@ -25,7 +25,10 @@
 uint blue_pwm_slice, red_pwm_slice;
 uint wrap = 2047;
 uint32_t last_time = 0;
+uint32_t last_frame = 0;
 bool pwm_state = true;
+bool select_border = false;
+int slide_count = 0;
 
 ssd1306_t ssd; // Inicializa a estrutura do display no escopo global
 
@@ -45,6 +48,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
         }
 
         else if(gpio == JOYSTICK_BUTTON){
+            select_border = !select_border;
             gpio_put(LED_GREEN, !gpio_get(LED_GREEN));
         }
     }
@@ -83,6 +87,35 @@ int choice_display_x(int joy_input){
     }
     else{
         return (joy_input-2048)/(2047/27);
+    }
+}
+
+void change_border(){
+    bool cor = true;
+    if(select_border){ // Borda grossa
+        // Bordas fixas
+        ssd1306_rect(&ssd, 0, 0, 3, 64, cor, cor); // Linha vertical esquerda
+        ssd1306_rect(&ssd, 0, 125, 3, 64, cor, cor); // Linha vertical direita
+        ssd1306_rect(&ssd, 0, 0, 128, 3, cor, cor); // Linha horizontal superior
+        ssd1306_rect(&ssd, 61, 0, 128, 3, cor, cor); // Linha horizontal inferior
+
+        // Quadrado deslizante
+        // Controle do frame rate para ter 30 fps
+        uint32_t current_frame = to_us_since_boot(get_absolute_time());
+        if(current_frame - last_frame > 33000){
+            slide_count++;
+            if(slide_count>63){
+                slide_count = 0;
+            }
+        }
+        ssd1306_rect(&ssd, 3, slide_count*2, 4, 4, cor, cor); // Quadrado superior
+        ssd1306_rect(&ssd, 57, 127-(slide_count*2), 4, 4, cor, cor); // Quadrado inferior
+        ssd1306_rect(&ssd, 63-slide_count, 3, 4, 4, cor, cor); // Quadrado esquerdo
+        ssd1306_rect(&ssd, slide_count, 121, 4, 4, cor, cor); // Quadrado direito
+    }
+    else{
+        slide_count=0;
+        ssd1306_rect(&ssd, 0, 0, 127, 63, cor, !cor); // Borda padrão
     }
 }
 
@@ -150,14 +183,14 @@ int main(){
 
         // Limpa o display
         ssd1306_fill(&ssd, false);
-        // Atualização do display
-        ssd1306_rect(&ssd, 0, 0, 127, 63, cor, !cor); // Desenha um frame nos contornos do display
+        change_border(); // Atualiza o estilo da borda
+        // Desenha um frame nos contornos do display
         ssd1306_draw_char(&ssd, '*', 59+choice_display_x(vrx_value), 27+choice_display_y(vry_value)); // Quadrado preenchido
 
         printf("Display x: %d | Display Y: %d\n", choice_display_x(vrx_value), choice_display_y(vry_value));
 
         ssd1306_send_data(&ssd); // Atualiza o display
 
-        sleep_ms(10);
+        sleep_ms(1); 
     }
 }
