@@ -175,11 +175,19 @@ int main(){
         adc_select_input(0);
         uint16_t vry_value = adc_read();
 
+        // Deadzone para os joysticks
+        if (vrx_value>=1900 && vrx_value<=2194){
+            vrx_value=2048;
+        }
+        if (vry_value>=1900 && vry_value<=2194){
+            vry_value=2048;
+        }
+
         // Ajustando o duty cycle
         pwm_set_gpio_level(LED_BLUE, choice_pwm_side(vry_value)); // Eixo Y - Azul
         pwm_set_gpio_level(LED_RED, choice_pwm_side(vrx_value)); // Eixo X - Vermelho
         
-        //printf("Duty X: %d | Duty Y: %d\n", choice_pwm_side(vrx_value)*100/2047, choice_pwm_side(vry_value)*100/2047); // Print para debug
+        printf("Duty X: %d | Duty Y: %d\n", choice_pwm_side(vrx_value)*100/2048, choice_pwm_side(vry_value)*100/2048); // Print para debug
 
         // Limpa o display
         ssd1306_fill(&ssd, false);
@@ -187,7 +195,7 @@ int main(){
         // Desenha um frame nos contornos do display
         ssd1306_draw_char(&ssd, '*', 59+choice_display_x(vrx_value), 27+choice_display_y(vry_value)); // Quadrado preenchido
 
-        printf("Display x: %d | Display Y: %d\n", choice_display_x(vrx_value), choice_display_y(vry_value));
+        //printf("Display x: %d | Display Y: %d\n", choice_display_x(vrx_value), choice_display_y(vry_value));
 
         ssd1306_send_data(&ssd); // Atualiza o display
 
